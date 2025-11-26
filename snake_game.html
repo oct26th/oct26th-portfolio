@@ -22,8 +22,10 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            touch-action: none; /* 重要：防止手機滑動畫面 */
+            touch-action: none; /* 防止手機滑動頁面 */
             overflow: hidden;
+            -webkit-user-select: none; /* 禁止選取文字 */
+            user-select: none;
         }
         h1 { margin: 0 0 10px 0; font-size: 1.5rem; }
         .score-board {
@@ -38,29 +40,33 @@
             border-radius: 8px;
             background: #1e293b;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            max-width: 90vw; /* 手機版稍微縮小一點避免誤觸邊緣 */
+            max-width: 90vw; 
         }
         .controls {
             margin-top: 20px;
             display: grid;
-            grid-template-columns: 60px 60px 60px;
-            grid-template-rows: 60px 60px;
-            gap: 10px;
-            opacity: 0.8;
+            grid-template-columns: 70px 70px 70px; /* 按鈕加大 */
+            grid-template-rows: 70px 70px;
+            gap: 8px;
+            opacity: 0.9;
         }
         .btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px; /* 更圓潤 */
             color: var(--text-color);
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            -webkit-tap-highlight-color: transparent; /* 移除點擊高亮 */
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.1s;
         }
-        .btn:active { background: var(--snake-color); }
+        .btn:active, .btn.active { 
+            background: var(--snake-color); 
+            transform: scale(0.95);
+        }
         .up { grid-column: 2; grid-row: 1; }
         .left { grid-column: 1; grid-row: 2; }
         .down { grid-column: 2; grid-row: 2; }
@@ -72,6 +78,7 @@
             text-decoration: none;
             font-size: 0.9rem;
             z-index: 10;
+            padding: 10px; /* 增加點擊區域 */
         }
         
         .hint {
@@ -80,7 +87,6 @@
             margin-top: 10px;
         }
 
-        /* 電腦版隱藏觸控按鈕 */
         @media (min-width: 768px) {
             .controls { display: none; }
             .hint { display: none; }
@@ -93,15 +99,15 @@
     
     <canvas id="gameCanvas" width="300" height="300"></canvas>
     
-    <!-- 手機版觸控按鈕 -->
+    <!-- 手機版觸控按鈕 (移除 onclick，改用 JS 綁定 touchstart) -->
     <div class="controls">
-        <button class="btn up" onclick="changeDirection('UP')">▲</button>
-        <button class="btn left" onclick="changeDirection('LEFT')">◀</button>
-        <button class="btn down" onclick="changeDirection('DOWN')">▼</button>
-        <button class="btn right" onclick="changeDirection('RIGHT')">▶</button>
+        <button class="btn up" data-dir="UP">▲</button>
+        <button class="btn left" data-dir="LEFT">◀</button>
+        <button class="btn down" data-dir="DOWN">▼</button>
+        <button class="btn right" data-dir="RIGHT">▶</button>
     </div>
     
-    <div class="hint">或是直接在螢幕上滑動控制</div>
+    <div class="hint">滑動或點擊按鈕控制</div>
 
     <a href="index.html" class="back-link">← 結束遊戲 (Back)</a>
 
@@ -124,46 +130,75 @@
         let foodX = 15;
         let foodY = 15;
 
-        // 遊戲迴圈
+        // 防止一幀內多次轉向導致自殺 (例如快速按 上->左)
+        let changingDirection = false; 
+
         window.onload = function() {
             document.addEventListener("keydown", keyPush);
-            setInterval(game, 1000/10); // 15 FPS
+            // 提升 FPS 到 15 (約 66ms 一幀) 讓遊戲更流暢
+            setInterval(game, 1000/15);
+            setupTouchControls();
         }
 
-        // --- 滑動手勢偵測 (Swipe) ---
-        let touchStartX = 0;
-        let touchStartY = 0;
+        function setupTouchControls() {
+            // 1. 優化虛擬按鈕：使用 touchstart 實現零延遲
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault(); // 防止長按選取等預設行為
+                    const dir = this.getAttribute('data-dir');
+                    changeDirection(dir);
+                    this.classList.add('active'); // 視覺回饋
+                    setTimeout(() => this.classList.remove('active'), 100);
+                }, { passive: false });
+            });
 
-        document.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, false);
+            // 2. 優化滑動體驗：改為 touchmove 即時偵測
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let swipeTriggered = false; // 確保一次滑動只觸發一次轉向
 
-        document.addEventListener('touchend', function(e) {
-            let touchEndX = e.changedTouches[0].screenX;
-            let touchEndY = e.changedTouches[0].screenY;
-            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
-        }, false);
+            document.addEventListener('touchstart', function(e) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                swipeTriggered = false; // 重置觸發狀態
+            }, false);
 
-        function handleSwipe(startX, startY, endX, endY) {
-            let diffX = endX - startX;
-            let diffY = endY - startY;
-            
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > 30) {
-                    if (diffX > 0) changeDirection('RIGHT');
-                    else changeDirection('LEFT');
+            document.addEventListener('touchmove', function(e) {
+                // 如果已經觸發過轉向，就不要再計算，直到手指放開
+                if (swipeTriggered) return;
+
+                let touchEndX = e.touches[0].clientX;
+                let touchEndY = e.touches[0].clientY;
+
+                let diffX = touchEndX - touchStartX;
+                let diffY = touchEndY - touchStartY;
+
+                // 滑動閾值設為 20px，超過就視為滑動
+                const threshold = 20; 
+
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    // 水平移動
+                    if (Math.abs(diffX) > threshold) {
+                        if (diffX > 0) changeDirection('RIGHT');
+                        else changeDirection('LEFT');
+                        swipeTriggered = true; // 標記已觸發
+                    }
+                } else {
+                    // 垂直移動
+                    if (Math.abs(diffY) > threshold) {
+                        if (diffY > 0) changeDirection('DOWN');
+                        else changeDirection('UP');
+                        swipeTriggered = true;
+                    }
                 }
-            } else {
-                if (Math.abs(diffY) > 30) {
-                    if (diffY > 0) changeDirection('DOWN');
-                    else changeDirection('UP');
-                }
-            }
+            }, { passive: false });
         }
-        // --------------------------------
 
         function game() {
+            // 每一幀開始時，重置轉向鎖
+            changingDirection = false;
+
             playerX += velocityX;
             playerY += velocityY;
 
@@ -173,7 +208,7 @@
                 return;
             }
 
-            // 修正順序：先更新蛇的位置軌跡
+            // 先更新軌跡
             trail.push({x: playerX, y: playerY});
             while(trail.length > tail) {
                 trail.shift();
@@ -183,12 +218,12 @@
             ctx.fillStyle = "#1e293b";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 畫蛇 & 檢查撞自己
+            // 畫蛇
             ctx.fillStyle = "#f97316";
             for(let i=0; i<trail.length; i++) {
                 ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize-2, gridSize-2);
                 
-                // 撞到自己判定 (i < trail.length - 1 是為了排除蛇頭自己撞自己)
+                // 撞到自己
                 if (i < trail.length - 1 && trail[i].x === playerX && trail[i].y === playerY) {
                     if(tail > 5) { 
                         resetGame();
@@ -201,7 +236,6 @@
             ctx.fillStyle = "#38bdf8";
             ctx.fillRect(foodX * gridSize, foodY * gridSize, gridSize-2, gridSize-2);
 
-            // 吃到食物
             if(playerX === foodX && playerY === foodY) {
                 tail++;
                 score += 10;
@@ -220,19 +254,31 @@
             velocityX = 0;
             velocityY = 0;
             trail = [];
-            
-            // 重置食物位置 (藍點)
             foodX = Math.floor(Math.random() * tileCount);
             foodY = Math.floor(Math.random() * tileCount);
         }
 
         function changeDirection(dir) {
+            // 如果這一幀已經轉過彎了，忽略後續輸入，防止自殺
+            if (changingDirection) return;
+            
+            let moved = false;
             switch(dir) {
-                case 'UP': if(velocityY !== 1) { velocityX = 0; velocityY = -1; } break;
-                case 'DOWN': if(velocityY !== -1) { velocityX = 0; velocityY = 1; } break;
-                case 'LEFT': if(velocityX !== 1) { velocityX = -1; velocityY = 0; } break;
-                case 'RIGHT': if(velocityX !== -1) { velocityX = 1; velocityY = 0; } break;
+                case 'UP': 
+                    if(velocityY !== 1) { velocityX = 0; velocityY = -1; moved = true; } 
+                    break;
+                case 'DOWN': 
+                    if(velocityY !== -1) { velocityX = 0; velocityY = 1; moved = true; } 
+                    break;
+                case 'LEFT': 
+                    if(velocityX !== 1) { velocityX = -1; velocityY = 0; moved = true; } 
+                    break;
+                case 'RIGHT': 
+                    if(velocityX !== -1) { velocityX = 1; velocityY = 0; moved = true; } 
+                    break;
             }
+            
+            if (moved) changingDirection = true;
         }
 
         function keyPush(evt) {
