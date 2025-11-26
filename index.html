@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio</title>
+    <style>
+        :root {
+            /* 深色模式配色變數 */
+            --bg-color: #0f172a;       /* 深藍背景 */
+            --card-bg: #1e293b;        /* 卡片背景 */
+            --text-main: #f8fafc;      /* 主要文字白 */
+            --text-sub: #94a3b8;       /* 次要文字灰 */
+            --accent: #f97316;         /* 亮點顏色 (活力橘) */
+            --accent-hover: #ea580c;   /* 按鈕 Hover 顏色 (深橘) */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden; /* 防止手機板橫向捲動 */
+        }
+
+        .container {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 3rem 2rem;
+            border-radius: 24px;
+            /* 讓卡片有點立體浮空的感覺 */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            max-width: 380px;
+            width: 85%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 頂部的裝飾光暈 */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), #fbbf24); /* 橘色到金黃色漸層 */
+        }
+
+        /* 大頭貼 placeholder */
+        .avatar-placeholder {
+            width: 100px;
+            height: 100px;
+            /* background: linear-gradient(135deg, #334155, #475569); */ /* 移除背景色 */
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            /* display: flex; */ /* 移除 flex */
+            /* align-items: center; */ /* 移除置中 */
+            /* justify-content: center; */ /* 移除置中 */
+            /* font-size: 2.5rem; */ /* 移除文字大小 */
+            /* font-weight: bold; */ /* 移除文字粗細 */
+            /* color: var(--accent); */ /* 移除文字顏色 */
+            border: 3px solid rgba(249, 115, 22, 0.2); /* 橘色微光邊框 */
+            object-fit: cover; /* 確保圖片填滿且不變形 */
+            object-position: top; /* 重點：聚焦在圖片上方 (大頭部分) */
+            background-color: #1e293b; /* 避免破圖時背景太透 */
+        }
+
+        h1 { 
+            margin: 0.5rem 0; 
+            letter-spacing: 0.5px; 
+            font-size: 1.8rem;
+            min-height: 2.4rem; /* 預留高度給打字機特效 */
+        }
+
+        p { 
+            color: var(--text-sub); 
+            margin-top: 0.5rem; 
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .role-tag {
+            display: inline-block;
+            background: rgba(249, 115, 22, 0.1); /* 橘色半透明背景 */
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 1rem 0 2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 14px 0;
+            text-decoration: none;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            color: #0f172a; /* Hover 時文字變深色 */
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25); /* 橘色陰影 */
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* 打字機特效游標 */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 2.5rem;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 大頭貼區域 -->
+        <!-- 
+             注意：src 設定為你的檔名。
+             onerror 是一個後備機制：如果找不到你的圖片(例如在預覽時)，
+             它會自動載入一張網路上的 3D 頭像示意圖，確保版面好看。
+        -->
+        <img src="image_830ffd.jpg" 
+             alt="Joe's Avatar" 
+             class="avatar-placeholder"
+             onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/4140/4140048.png';">
+
+        <!-- 標題：這裡使用了 JavaScript 來做打字效果 -->
+        <h1 id="typewriter"></h1>
+        
+        <p>熱愛產品思維與技術整合<br>專注於打造極致的使用者體驗</p>
+        
+        <div class="role-tag">Product Manager @ Tech</div>
+
+        <div class="links">
+            <a href="#" class="btn">查看我的作品集 (Portfolio)</a>
+            <a href="#" class="btn">LinkedIn 個人檔案</a>
+            <a href="mailto:your@email.com" class="btn">聯絡我 (Email)</a>
+        </div>
+
+        <div class="footer">
+            © 2024 Design by Gemini
+        </div>
+    </div>
+
+    <script>
+        // 簡單的打字機特效邏輯
+        const textToType = "Hello, I'm Joe."; // 你可以在這裡改成你的名字
+        const typeWriterElement = document.getElementById('typewriter');
+        let i = 0;
+
+        function typeWriter() {
+            if (i < textToType.length) {
+                typeWriterElement.innerHTML += textToType.charAt(i);
+                i++;
+                setTimeout(typeWriter, 100); // 打字速度，越小越快
+            } else {
+                // 打完字後加上閃爍游標
+                typeWriterElement.classList.add('typing-cursor');
+            }
+        }
+
+        // 頁面載入後開始打字
+        window.onload = typeWriter;
+    </script>
+</body>
+</html>
