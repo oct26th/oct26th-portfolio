@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SORA2 Video Showcase | Joe's Portfolio</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent: #f97316;
+            --accent-hover: #ea580c;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .showcase-card {
+            width: 90%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .showcase-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        /* 縮圖容器 */
+        .thumb-container {
+            width: 100%;
+            height: 340px; /* 固定高度 */
+            background-color: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 讓圖片填滿 */
+            opacity: 0.9;
+            transition: opacity 0.3s, transform 0.5s;
+        }
+
+        .showcase-card:hover .thumb-img {
+            opacity: 1;
+            transform: scale(1.05); /* 滑鼠移過去稍微放大 */
+        }
+
+        /* 播放圖示 (裝飾用，暗示這是影片) */
+        .play-icon-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            border: 2px solid rgba(255,255,255,0.2);
+            pointer-events: none; /* 讓點擊穿透 */
+        }
+
+        .info {
+            padding: 2rem;
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(219, 39, 119, 0.2);
+            color: #fbcfe8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .info h1 { 
+            margin: 0 0 10px 0; 
+            font-size: 1.6rem; 
+            color: var(--text-main);
+        }
+
+        .info p { 
+            color: var(--text-sub); 
+            margin: 0 0 24px 0; 
+            line-height: 1.6; 
+            font-size: 0.95rem;
+        }
+
+        /* 外部連結按鈕 */
+        .external-link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--accent);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        }
+
+        .external-link-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+        }
+
+        .external-link-btn svg {
+            margin-left: 8px;
+        }
+
+        /* Icon Button Style (Back) */
+        .home-btn {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            color: #94a3b8;
+            text-decoration: none;
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+
+        .home-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="showcase-card">
+        <!-- 縮圖區域：點擊圖片跳轉到 Sora Profile -->
+        <a href="https://sora.chatgpt.com/profile/oct26th" target="_blank" class="thumb-container" style="display: block;">
+            <!-- 替換為電影拍攝/攝影機運作的 GIF -->
+            <img src="https://media.giphy.com/media/3o6vXNLzXdW4sbFRGo/giphy.gif" alt="Cinematic Camera Recording GIF" class="thumb-img">
+            
+            <!-- 已移除播放圖示遮罩 -->
+        </a>
+        
+        <div class="info">
+            <span class="tag">AI Video Generation</span>
+            <h1>SORA2 Cinematic Showcase</h1>
+            <p>SORA2 能夠生成極其逼真的光影效果與物理動態。歡迎前往我的 Sora 個人主頁觀看更多創作。</p>
+            
+            <!-- 帳號連結按鈕 -->
+            <a href="https://sora.chatgpt.com/profile/oct26th" target="_blank" class="external-link-btn">
+                前往我的 Sora 主頁
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Icon 按鈕：回到 Playground -->
+    <a href="index.html?playground=true" class="home-btn" title="回到 Gemini Playground">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+    </a>
+
+</body>
+</html>
