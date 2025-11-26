@@ -50,8 +50,8 @@
             background: #000;
             border-radius: 12px;
             padding: 20px;
-            color: var(--code-green); /* 改成駭客綠 */
-            font-family: 'Courier New', monospace; /* 改成等寬字體 */
+            color: var(--code-green);
+            font-family: 'Courier New', monospace;
             line-height: 1.6;
             white-space: pre-wrap;
             border: 1px solid rgba(34, 197, 94, 0.3);
@@ -66,7 +66,7 @@
         .controls {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap; /* 手機版自動換行 */
+            flex-wrap: wrap;
         }
 
         select, button {
@@ -112,7 +112,6 @@
 
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        /* 游標閃爍動畫 */
         .cursor {
             display: inline-block;
             width: 10px;
@@ -125,15 +124,28 @@
         
         @keyframes blink { 50% { opacity: 0; } }
 
-        .back-link {
+        /* Icon Button Style */
+        .home-btn {
             margin-top: 2rem;
-            color: var(--text-sub);
-            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-sub);
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
         }
-        .back-link:hover { color: var(--accent); }
+
+        .home-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: scale(1.1) rotate(90deg); /* 加了一點旋轉特效 */
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -160,10 +172,17 @@
         </div>
     </div>
 
-    <a href="index.html" class="back-link">← 回到首頁</a>
+    <!-- 改成 Icon 按鈕 -->
+    <a href="index.html?playground=true" class="home-btn" title="回到 Gemini Playground">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+    </a>
 
     <script>
-        // 更有趣的資料庫
         const db = {
             pm: [
                 "我們需要對齊一下顆粒度，並快速迭代這個 MVP。",
@@ -218,33 +237,29 @@
         const select = document.getElementById('topicSelect');
 
         function generate() {
-            // 鎖定按鈕
             btn.disabled = true;
             btn.innerText = "運算中...";
             output.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
             output.classList.remove('has-content');
 
-            // 模擬 API 延遲
             setTimeout(() => {
                 const topic = select.value;
                 const ideas = db[topic];
                 const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
                 
                 typeWriter(randomIdea);
-            }, 800 + Math.random() * 800); // 隨機延遲
+            }, 800 + Math.random() * 800);
         }
 
         function typeWriter(text) {
-            output.innerHTML = ''; // 清空 loading
+            output.innerHTML = '';
             output.classList.add('has-content');
             
             let i = 0;
-            const speed = 40; // 打字速度
+            const speed = 40;
 
             function type() {
                 if (i < text.length) {
-                    // 這裡的邏輯是為了保持游標永遠在最後面
-                    // 每次都重寫 innerHTML 加上游標
                     output.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
                     i++;
                     setTimeout(type, speed);

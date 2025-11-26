@@ -408,7 +408,18 @@
                 typeWriterElement.classList.add('typing-cursor');
             }
         }
-        window.onload = typeWriter;
+        
+        // 修改：將 window.onload 改寫，同時執行打字機與偵測網址參數
+        window.onload = function() {
+            typeWriter();
+            
+            // 偵測網址是否有 ?playground=true 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('playground') === 'true') {
+                // 如果有，稍微等待一下網頁載入後，自動打開彈窗
+                setTimeout(openModal, 300);
+            }
+        };
 
         const modal = document.getElementById('portfolioModal');
 
@@ -422,6 +433,11 @@
 
         function closeModal() {
             modal.classList.remove('active');
+            // 關閉時，順便把網址上的參數拿掉，這樣重新整理時才不會又自動跳出來
+            const url = new URL(window.location);
+            url.searchParams.delete('playground');
+            window.history.replaceState({}, '', url);
+
             setTimeout(() => {
                 modal.style.display = 'none';
             }, 300);

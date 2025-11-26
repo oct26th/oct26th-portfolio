@@ -22,9 +22,9 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            touch-action: none; /* 防止手機滑動頁面 */
+            touch-action: none;
             overflow: hidden;
-            -webkit-user-select: none; /* 禁止選取文字 */
+            -webkit-user-select: none;
             user-select: none;
         }
         h1 { margin: 0 0 10px 0; font-size: 1.5rem; }
@@ -45,7 +45,7 @@
         .controls {
             margin-top: 20px;
             display: grid;
-            grid-template-columns: 70px 70px 70px; /* 按鈕加大 */
+            grid-template-columns: 70px 70px 70px;
             grid-template-rows: 70px 70px;
             gap: 8px;
             opacity: 0.9;
@@ -53,7 +53,7 @@
         .btn {
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 16px; /* 更圓潤 */
+            border-radius: 16px;
             color: var(--text-color);
             font-size: 1.8rem;
             cursor: pointer;
@@ -72,13 +72,27 @@
         .down { grid-column: 2; grid-row: 2; }
         .right { grid-column: 3; grid-row: 2; }
 
-        .back-link {
+        /* Icon Button Style */
+        .home-btn {
             margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
             color: #94a3b8;
             text-decoration: none;
-            font-size: 0.9rem;
             z-index: 10;
-            padding: 10px; /* 增加點擊區域 */
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+
+        .home-btn:hover {
+            background: #f97316;
+            color: #fff;
+            transform: scale(1.1);
         }
         
         .hint {
@@ -99,7 +113,6 @@
     
     <canvas id="gameCanvas" width="300" height="300"></canvas>
     
-    <!-- 手機版觸控按鈕 (移除 onclick，改用 JS 綁定 touchstart) -->
     <div class="controls">
         <button class="btn up" data-dir="UP">▲</button>
         <button class="btn left" data-dir="LEFT">◀</button>
@@ -109,7 +122,15 @@
     
     <div class="hint">滑動或點擊按鈕控制</div>
 
-    <a href="index.html" class="back-link">← 結束遊戲 (Back)</a>
+    <!-- 改成 Icon 按鈕 -->
+    <a href="index.html?playground=true" class="home-btn" title="回到 Gemini Playground">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+    </a>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -130,42 +151,37 @@
         let foodX = 15;
         let foodY = 15;
 
-        // 防止一幀內多次轉向導致自殺 (例如快速按 上->左)
         let changingDirection = false; 
 
         window.onload = function() {
             document.addEventListener("keydown", keyPush);
-            // 提升 FPS 到 15 (約 66ms 一幀) 讓遊戲更流暢
             setInterval(game, 1000/15);
             setupTouchControls();
         }
 
         function setupTouchControls() {
-            // 1. 優化虛擬按鈕：使用 touchstart 實現零延遲
             const buttons = document.querySelectorAll('.btn');
             buttons.forEach(btn => {
                 btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault(); // 防止長按選取等預設行為
+                    e.preventDefault();
                     const dir = this.getAttribute('data-dir');
                     changeDirection(dir);
-                    this.classList.add('active'); // 視覺回饋
+                    this.classList.add('active');
                     setTimeout(() => this.classList.remove('active'), 100);
                 }, { passive: false });
             });
 
-            // 2. 優化滑動體驗：改為 touchmove 即時偵測
             let touchStartX = 0;
             let touchStartY = 0;
-            let swipeTriggered = false; // 確保一次滑動只觸發一次轉向
+            let swipeTriggered = false;
 
             document.addEventListener('touchstart', function(e) {
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
-                swipeTriggered = false; // 重置觸發狀態
+                swipeTriggered = false;
             }, false);
 
             document.addEventListener('touchmove', function(e) {
-                // 如果已經觸發過轉向，就不要再計算，直到手指放開
                 if (swipeTriggered) return;
 
                 let touchEndX = e.touches[0].clientX;
@@ -174,18 +190,15 @@
                 let diffX = touchEndX - touchStartX;
                 let diffY = touchEndY - touchStartY;
 
-                // 滑動閾值設為 20px，超過就視為滑動
                 const threshold = 20; 
 
                 if (Math.abs(diffX) > Math.abs(diffY)) {
-                    // 水平移動
                     if (Math.abs(diffX) > threshold) {
                         if (diffX > 0) changeDirection('RIGHT');
                         else changeDirection('LEFT');
-                        swipeTriggered = true; // 標記已觸發
+                        swipeTriggered = true;
                     }
                 } else {
-                    // 垂直移動
                     if (Math.abs(diffY) > threshold) {
                         if (diffY > 0) changeDirection('DOWN');
                         else changeDirection('UP');
@@ -196,34 +209,27 @@
         }
 
         function game() {
-            // 每一幀開始時，重置轉向鎖
             changingDirection = false;
-
             playerX += velocityX;
             playerY += velocityY;
 
-            // 撞牆死亡機制
             if(playerX < 0 || playerX > tileCount - 1 || playerY < 0 || playerY > tileCount - 1) {
                 resetGame();
                 return;
             }
 
-            // 先更新軌跡
             trail.push({x: playerX, y: playerY});
             while(trail.length > tail) {
                 trail.shift();
             }
 
-            // 畫背景
             ctx.fillStyle = "#1e293b";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 畫蛇
             ctx.fillStyle = "#f97316";
             for(let i=0; i<trail.length; i++) {
                 ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize-2, gridSize-2);
                 
-                // 撞到自己
                 if (i < trail.length - 1 && trail[i].x === playerX && trail[i].y === playerY) {
                     if(tail > 5) { 
                         resetGame();
@@ -232,7 +238,6 @@
                 }
             }
 
-            // 畫食物
             ctx.fillStyle = "#38bdf8";
             ctx.fillRect(foodX * gridSize, foodY * gridSize, gridSize-2, gridSize-2);
 
@@ -259,7 +264,6 @@
         }
 
         function changeDirection(dir) {
-            // 如果這一幀已經轉過彎了，忽略後續輸入，防止自殺
             if (changingDirection) return;
             
             let moved = false;
