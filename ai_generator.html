@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 靈感生成器 | Joe's Portfolio</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent: #f97316;
+            --code-green: #22c55e;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            margin-top: 2rem;
+        }
+        .header h1 { margin-bottom: 0.5rem; }
+        .header p { color: var(--text-sub); }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .output-area {
+            min-height: 150px;
+            background: #000;
+            border-radius: 12px;
+            padding: 20px;
+            color: var(--code-green); /* 改成駭客綠 */
+            font-family: 'Courier New', monospace; /* 改成等寬字體 */
+            line-height: 1.6;
+            white-space: pre-wrap;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        .output-area.has-content {
+            border-color: var(--code-green);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; /* 手機版自動換行 */
+        }
+
+        select, button {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        select { flex: 1; cursor: pointer; min-width: 200px; }
+        option { background: #1e293b; }
+        
+        button {
+            background: var(--accent);
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            padding: 0 24px;
+            transition: transform 0.2s;
+            min-width: 100px;
+        }
+        
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        button:active { transform: translateY(0); }
+        button:disabled { background: #64748b; cursor: not-allowed; transform: none; }
+
+        .loading span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--code-green);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            margin: 0 2px;
+        }
+        
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        /* 游標閃爍動畫 */
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: var(--code-green);
+            vertical-align: bottom;
+            animation: blink 1s step-end infinite;
+            margin-left: 5px;
+        }
+        
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .back-link {
+            margin-top: 2rem;
+            color: var(--text-sub);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .back-link:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🔮 AI 靈感 (與幹話) 生成器</h1>
+        <p>選擇一個主題，讓人工智慧告訴你真理。</p>
+    </div>
+
+    <div class="chat-container">
+        <div class="output-area" id="output">
+            System ready...<br>Waiting for input...<span class="cursor"></span>
+        </div>
+        
+        <div class="controls">
+            <select id="topicSelect">
+                <option value="pm">PM 專業黑話 (PM Jargon)</option>
+                <option value="excuse">工程師甩鍋金句 (Dev Excuses)</option>
+                <option value="fortune">今日運勢占卜 (Fortune)</option>
+                <option value="nonsense">廢話文學 (Nonsense)</option>
+                <option value="startup">矽谷創業點子 (Startup Idea)</option>
+            </select>
+            <button onclick="generate()" id="genBtn">生成</button>
+        </div>
+    </div>
+
+    <a href="index.html" class="back-link">← 回到首頁</a>
+
+    <script>
+        // 更有趣的資料庫
+        const db = {
+            pm: [
+                "我們需要對齊一下顆粒度，並快速迭代這個 MVP。",
+                "這個痛點需要深挖，確保我們的解決方案能落地。",
+                "麻煩確認一下這個 Feature 的 ROI 和商業價值。",
+                "讓我們進行一場 Brainstorming，聚焦在用戶旅程地圖上。",
+                "這是一個 High-level 的 Roadmap，細節我們可以再 Sync。",
+                "我們這週的 Sprint 要主打一個『賦能』的概念。",
+                "底層邏輯是打通資訊孤島，形成閉環。",
+                "這件事的抓手在哪裡？我們要如何撬動資源？"
+            ],
+            excuse: [
+                "這在我的電腦上是好的啊 (It works on my machine)。",
+                "這不是 Bug，這是 Feature (特色)。",
+                "這是第三方 API 的問題，不是我的鍋。",
+                "緩存問題，你清一下 Cache 再試試？",
+                "剛才誰動了我的 code？我明明沒改這裡。",
+                "這是一個已知的 issue，我們會在下個版本修復 (也許)。",
+                "應該是網路波動造成的，你再整裡一次。",
+                "那是實習生寫的 code。"
+            ],
+            fortune: [
+                "今日宜：寫 Code，忌：Deploy (部署)。",
+                "今日運勢：大凶。你的 Bug 將會像星星一樣多。",
+                "今日宜：裝忙，忌：被 PM 抓到。",
+                "大吉：伺服器整天都不會當機，連警告都沒有。",
+                "凶：上線前一秒發現重大漏洞，全組加班。",
+                "中平：你的 PR 會被 Reject 三次，但最後會過。",
+                "今日財運：小心 AWS 帳單暴漲。"
+            ],
+            nonsense: [
+                "聽君一席話，如聽一席話。",
+                "這個問題的關鍵在於，我們必須找到關鍵的問題。",
+                "據說每過 60 秒，非洲就會過去一分鐘。",
+                "如果你不打開這個網頁，你就不會看到這行字。",
+                "所謂的失敗，就是沒有成功。",
+                "只要你足夠努力，老闆就能換新車了。",
+                "雖然我什麼都沒做，但我覺得我已經盡力了。"
+            ],
+            startup: [
+                "我們要打造區塊鏈上的 Uber，但是是給貓用的。",
+                "這是一個 AI 驅動的智慧型馬桶，能分析你的...健康。",
+                "元宇宙裡的珍珠奶茶店，透過 NFT 進行口味驗證。",
+                "去中心化的衛生紙共享平台 (DTP)。",
+                "我們要用量子運算來解決『中午吃什麼』這個難題。",
+                "Tinder for Co-founders: 左滑找技術長，右滑找金主。"
+            ]
+        };
+
+        const output = document.getElementById('output');
+        const btn = document.getElementById('genBtn');
+        const select = document.getElementById('topicSelect');
+
+        function generate() {
+            // 鎖定按鈕
+            btn.disabled = true;
+            btn.innerText = "運算中...";
+            output.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            output.classList.remove('has-content');
+
+            // 模擬 API 延遲
+            setTimeout(() => {
+                const topic = select.value;
+                const ideas = db[topic];
+                const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
+                
+                typeWriter(randomIdea);
+            }, 800 + Math.random() * 800); // 隨機延遲
+        }
+
+        function typeWriter(text) {
+            output.innerHTML = ''; // 清空 loading
+            output.classList.add('has-content');
+            
+            let i = 0;
+            const speed = 40; // 打字速度
+
+            function type() {
+                if (i < text.length) {
+                    // 這裡的邏輯是為了保持游標永遠在最後面
+                    // 每次都重寫 innerHTML 加上游標
+                    output.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "再次生成";
+                }
+            }
+            type();
+        }
+    </script>
+</body>
+</html>

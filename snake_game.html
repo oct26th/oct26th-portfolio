@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Game | Joe's Portfolio</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --snake-color: #f97316;
+            --food-color: #38bdf8;
+            --text-color: #f8fafc;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            touch-action: none; /* 重要：防止手機滑動畫面 */
+            overflow: hidden;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 1.5rem; }
+        .score-board {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 20px;
+            border-radius: 20px;
+        }
+        canvas {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: #1e293b;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 90vw; /* 手機版稍微縮小一點避免誤觸邊緣 */
+        }
+        .controls {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px;
+            gap: 10px;
+            opacity: 0.8;
+        }
+        .btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 12px;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent; /* 移除點擊高亮 */
+        }
+        .btn:active { background: var(--snake-color); }
+        .up { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+
+        .back-link {
+            margin-top: 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+        
+        .hint {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 10px;
+        }
+
+        /* 電腦版隱藏觸控按鈕 */
+        @media (min-width: 768px) {
+            .controls { display: none; }
+            .hint { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="score-board">Score: <span id="score">0</span></div>
+    
+    <canvas id="gameCanvas" width="300" height="300"></canvas>
+    
+    <!-- 手機版觸控按鈕 -->
+    <div class="controls">
+        <button class="btn up" onclick="changeDirection('UP')">▲</button>
+        <button class="btn left" onclick="changeDirection('LEFT')">◀</button>
+        <button class="btn down" onclick="changeDirection('DOWN')">▼</button>
+        <button class="btn right" onclick="changeDirection('RIGHT')">▶</button>
+    </div>
+    
+    <div class="hint">或是直接在螢幕上滑動控制</div>
+
+    <a href="index.html" class="back-link">← 結束遊戲 (Back)</a>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        const gridSize = 15;
+        const tileCount = canvas.width / gridSize;
+
+        let score = 0;
+        let velocityX = 0;
+        let velocityY = 0;
+        let trail = [];
+        let tail = 5;
+
+        let playerX = 10;
+        let playerY = 10;
+        let foodX = 15;
+        let foodY = 15;
+
+        // 遊戲迴圈
+        window.onload = function() {
+            document.addEventListener("keydown", keyPush);
+            setInterval(game, 1000/10); // 15 FPS
+        }
+
+        // --- 滑動手勢偵測 (Swipe) ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        document.addEventListener('touchend', function(e) {
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+        }, false);
+
+        function handleSwipe(startX, startY, endX, endY) {
+            let diffX = endX - startX;
+            let diffY = endY - startY;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 30) {
+                    if (diffX > 0) changeDirection('RIGHT');
+                    else changeDirection('LEFT');
+                }
+            } else {
+                if (Math.abs(diffY) > 30) {
+                    if (diffY > 0) changeDirection('DOWN');
+                    else changeDirection('UP');
+                }
+            }
+        }
+        // --------------------------------
+
+        function game() {
+            playerX += velocityX;
+            playerY += velocityY;
+
+            // 撞牆死亡機制
+            if(playerX < 0 || playerX > tileCount - 1 || playerY < 0 || playerY > tileCount - 1) {
+                resetGame();
+                return;
+            }
+
+            // 修正順序：先更新蛇的位置軌跡
+            trail.push({x: playerX, y: playerY});
+            while(trail.length > tail) {
+                trail.shift();
+            }
+
+            // 畫背景
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 畫蛇 & 檢查撞自己
+            ctx.fillStyle = "#f97316";
+            for(let i=0; i<trail.length; i++) {
+                ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize-2, gridSize-2);
+                
+                // 撞到自己判定 (i < trail.length - 1 是為了排除蛇頭自己撞自己)
+                if (i < trail.length - 1 && trail[i].x === playerX && trail[i].y === playerY) {
+                    if(tail > 5) { 
+                        resetGame();
+                        return;
+                    }
+                }
+            }
+
+            // 畫食物
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillRect(foodX * gridSize, foodY * gridSize, gridSize-2, gridSize-2);
+
+            // 吃到食物
+            if(playerX === foodX && playerY === foodY) {
+                tail++;
+                score += 10;
+                scoreElement.innerText = score;
+                foodX = Math.floor(Math.random() * tileCount);
+                foodY = Math.floor(Math.random() * tileCount);
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            scoreElement.innerText = score;
+            tail = 5;
+            playerX = 10;
+            playerY = 10;
+            velocityX = 0;
+            velocityY = 0;
+            trail = [];
+            
+            // 重置食物位置 (藍點)
+            foodX = Math.floor(Math.random() * tileCount);
+            foodY = Math.floor(Math.random() * tileCount);
+        }
+
+        function changeDirection(dir) {
+            switch(dir) {
+                case 'UP': if(velocityY !== 1) { velocityX = 0; velocityY = -1; } break;
+                case 'DOWN': if(velocityY !== -1) { velocityX = 0; velocityY = 1; } break;
+                case 'LEFT': if(velocityX !== 1) { velocityX = -1; velocityY = 0; } break;
+                case 'RIGHT': if(velocityX !== -1) { velocityX = 1; velocityY = 0; } break;
+            }
+        }
+
+        function keyPush(evt) {
+            switch(evt.keyCode) {
+                case 37: changeDirection('LEFT'); break;
+                case 38: changeDirection('UP'); break;
+                case 39: changeDirection('RIGHT'); break;
+                case 40: changeDirection('DOWN'); break;
+            }
+        }
+    </script>
+</body>
+</html>
